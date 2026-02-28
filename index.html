@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Tracker Automation Hub</title>
+  <style>
+    :root {
+      --bg: #0f1220;
+      --panel: #171b2f;
+      --panel-2: #1d2240;
+      --accent: #6c8dff;
+      --accent-2: #4be2b6;
+      --text: #e8ecff;
+      --warn: #ff8c8c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Arial, sans-serif;
+      background: radial-gradient(circle at top, #1e2450, var(--bg));
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(1000px, 100%);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: linear-gradient(145deg, var(--panel), var(--panel-2));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    h1, h2 { margin: 0 0 10px; }
+    p { margin: 0 0 8px; color: #c9d2ff; }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      border: 1px solid rgba(255,255,255,.2);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.04);
+      font-size: 14px;
+    }
+
+    .upload-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    input, button, select {
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(0,0,0,.2);
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    button {
+      cursor: pointer;
+      background: linear-gradient(120deg, var(--accent), #8f70ff);
+      border: none;
+      font-weight: 600;
+    }
+
+    button.secondary {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+    }
+
+    .list {
+      margin-top: 12px;
+      display: grid;
+      gap: 8px;
+      max-height: 270px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,.03);
+    }
+
+    .item small { color: #adbbff; }
+    .danger { color: var(--warn); }
+
+    .coach {
+      border-left: 4px solid var(--accent-2);
+      padding: 10px 12px;
+      background: rgba(75,226,182,.08);
+      border-radius: 8px;
+      margin-top: 8px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card hero">
+      <div>
+        <h1>Study Tracker Automation Hub</h1>
+        <p>Upload study material, auto-sort files, and get voice + sound automation reminders.</p>
+      </div>
+      <div class="stats">
+        <span class="pill">Materials: <strong id="count">0</strong></span>
+        <span class="pill">Study XP: <strong id="xp">0</strong></span>
+        <span class="pill">Streak: <strong id="streak">0</strong> days</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Study Material Section (Editable + Upload)</h2>
+      <p>Choose a subject, upload files, and automation will track and remind you.</p>
+      <div class="upload-row">
+        <select id="subject">
+          <option>Math</option>
+          <option>Science</option>
+          <option>History</option>
+          <option>Language</option>
+          <option>Computer</option>
+          <option>General</option>
+        </select>
+        <input id="materialInput" type="file" multiple />
+        <button id="uploadBtn">Upload Material</button>
+        <button id="clearBtn" class="secondary">Clear All</button>
+      </div>
+      <div class="coach" id="coach">Automation coach is ready.</div>
+      <div class="list" id="materials"></div>
+    </section>
+
+    <section class="card">
+      <h2>Automation Controls</h2>
+      <p>All automations are enabled by default:</p>
+      <ul>
+        <li>Auto save uploaded material metadata in local storage.</li>
+        <li>Auto voice feedback for uploads and reminders.</li>
+        <li>Auto sound effect when material is uploaded.</li>
+        <li>Idle reminder if no activity for 2 minutes.</li>
+        <li>Daily streak and XP updates.</li>
+      </ul>
+      <button id="studySession" class="secondary">Complete 30 min Study Session (+10 XP)</button>
+    </section>
+  </main>
+
+  <script>
+    const STORE_KEY = "studyMaterials";
+    const XP_KEY = "studyXP";
+    const STREAK_KEY = "studyStreak";
+    const LAST_ACTIVE_KEY = "lastStudyDate";
+
+    const ui = {
+      input: document.getElementById("materialInput"),
+      uploadBtn: document.getElementById("uploadBtn"),
+      clearBtn: document.getElementById("clearBtn"),
+      list: document.getElementById("materials"),
+      coach: document.getElementById("coach"),
+      count: document.getElementById("count"),
+      xp: document.getElementById("xp"),
+      streak: document.getElementById("streak"),
+      subject: document.getElementById("subject"),
+      studySession: document.getElementById("studySession")
+    };
+
+    const state = {
+      materials: JSON.parse(localStorage.getItem(STORE_KEY) || "[]"),
+      xp: Number(localStorage.getItem(XP_KEY) || 0),
+      streak: Number(localStorage.getItem(STREAK_KEY) || 0),
+      idleSeconds: 0
+    };
+
+    function speak(text) {
+      ui.coach.textContent = text;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    }
+
+    function playUploadSound() {
+      const audio = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+      oscillator.connect(gain);
+      gain.connect(audio.destination);
+      oscillator.type = "triangle";
+      oscillator.frequency.value = 900;
+      gain.gain.value = 0.03;
+      oscillator.start();
+      oscillator.stop(audio.currentTime + 0.15);
+    }
+
+    function saveState() {
+      localStorage.setItem(STORE_KEY, JSON.stringify(state.materials));
+      localStorage.setItem(XP_KEY, String(state.xp));
+      localStorage.setItem(STREAK_KEY, String(state.streak));
+    }
+
+    function renderMaterials() {
+      ui.list.innerHTML = "";
+      state.materials
+        .slice()
+        .reverse()
+        .forEach((m, index) => {
+          const row = document.createElement("article");
+          row.className = "item";
+          row.innerHTML = `
+            <div>
+              <strong>${m.name}</strong>
+              <br>
+              <small>${m.subject} • ${m.sizeKB} KB • ${new Date(m.createdAt).toLocaleString()}</small>
+            </div>
+            <button class="secondary" data-index="${state.materials.length - 1 - index}">Delete</button>
+          `;
+          ui.list.appendChild(row);
+        });
+
+      [...ui.list.querySelectorAll("button[data-index]")].forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.index);
+          const removed = state.materials.splice(idx, 1);
+          saveState();
+          refreshStats();
+          renderMaterials();
+          speak(`${removed[0].name} removed from your materials.`);
+        });
+      });
+
+      if (!state.materials.length) {
+        ui.list.innerHTML = `<p class="danger">No study material uploaded yet.</p>`;
+      }
+    }
+
+    function refreshStats() {
+      ui.count.textContent = String(state.materials.length);
+      ui.xp.textContent = String(state.xp);
+      ui.streak.textContent = String(state.streak);
+    }
+
+    function updateStreak() {
+      const today = new Date().toDateString();
+      const lastStudyDate = localStorage.getItem(LAST_ACTIVE_KEY);
+
+      if (!lastStudyDate) {
+        state.streak = 1;
+      } else {
+        const days = Math.floor((new Date(today) - new Date(lastStudyDate)) / 86400000);
+        if (days === 1) state.streak += 1;
+        if (days > 1) state.streak = 1;
+      }
+
+      localStorage.setItem(LAST_ACTIVE_KEY, today);
+      saveState();
+      refreshStats();
+    }
+
+    ui.uploadBtn.addEventListener("click", () => {
+      if (!ui.input.files.length) {
+        speak("Please choose at least one file to upload.");
+        return;
+      }
+
+      const subject = ui.subject.value;
+      const now = Date.now();
+
+      [...ui.input.files].forEach((file) => {
+        state.materials.push({
+          name: file.name,
+          subject,
+          sizeKB: Math.max(1, Math.round(file.size / 1024)),
+          createdAt: now
+        });
+      });
+
+      state.xp += ui.input.files.length * 5;
+      updateStreak();
+      saveState();
+      refreshStats();
+      renderMaterials();
+      playUploadSound();
+      speak(`${ui.input.files.length} file uploaded in ${subject}. Automation complete.`);
+      ui.input.value = "";
+    });
+
+    ui.clearBtn.addEventListener("click", () => {
+      state.materials = [];
+      saveState();
+      refreshStats();
+      renderMaterials();
+      speak("All study materials cleared.");
+    });
+
+    ui.studySession.addEventListener("click", () => {
+      state.xp += 10;
+      updateStreak();
+      saveState();
+      refreshStats();
+      speak("Great work. Thirty minutes logged and XP updated.");
+    });
+
+    ["click", "keydown", "mousemove", "touchstart"].forEach((eventName) => {
+      document.addEventListener(eventName, () => {
+        state.idleSeconds = 0;
+      });
+    });
+
+    setInterval(() => {
+      state.idleSeconds += 1;
+      if (state.idleSeconds === 120) {
+        speak("Reminder. You have been idle for two minutes. Resume your study plan.");
+      }
+    }, 1000);
+
+    setInterval(() => {
+      if (!state.materials.length) {
+        speak("Tip. Upload your latest notes to keep this tracker updated.");
+      }
+    }, 180000);
+
+    refreshStats();
+    renderMaterials();
+    speak("Welcome back. All study automations are active.");
+  </script>
+</body>
+</html>
