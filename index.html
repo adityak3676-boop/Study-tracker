@@ -168,6 +168,17 @@
         <div class="coach" id="coach">Automation coach ready.</div>
         <div class="list" id="activityList"></div>
       </section>
+
+      <section class="card">
+        <h2>AI Automation Sensor</h2>
+        <p>Smart sensor checks your study behavior and auto-suggests what to do next.</p>
+        <div class="chips">
+          <span class="chip">Focus Score: <strong id="focusScore">0</strong>/100</span>
+          <span class="chip">Status: <strong id="focusStatus">Booting</strong></span>
+        </div>
+        <div class="coach" id="sensorCoach">Sensor starting...</div>
+        <div class="list" id="sensorLog"></div>
+      </section>
     </section>
   </main>
 
@@ -177,7 +188,8 @@
       materials: "st_materials",
       tasks: "st_tasks",
       studiedSeconds: "st_studied_seconds",
-      activity: "st_activity"
+      activity: "st_activity",
+      sensor: "st_sensor"
     };
 
     const ui = {
@@ -202,6 +214,10 @@
       resetTimerBtn: document.getElementById("resetTimerBtn"),
       coach: document.getElementById("coach"),
       activityList: document.getElementById("activityList"),
+      focusScore: document.getElementById("focusScore"),
+      focusStatus: document.getElementById("focusStatus"),
+      sensorCoach: document.getElementById("sensorCoach"),
+      sensorLog: document.getElementById("sensorLog"),
       materialsCount: document.getElementById("materialsCount"),
       studiedCount: document.getElementById("studiedCount"),
       pendingCount: document.getElementById("pendingCount"),
@@ -221,6 +237,7 @@
       tasks: JSON.parse(localStorage.getItem(KEYS.tasks) || "[]"),
       studiedSeconds: Number(localStorage.getItem(KEYS.studiedSeconds) || 0),
       activity: JSON.parse(localStorage.getItem(KEYS.activity) || "[]"),
+      sensor: JSON.parse(localStorage.getItem(KEYS.sensor) || '{"score":0,"status":"Booting","log":[]}'),
       sessionSeconds: 0,
       timerRef: null,
       idleSeconds: 0
@@ -239,6 +256,11 @@
       localStorage.setItem(KEYS.tasks, JSON.stringify(state.tasks));
       localStorage.setItem(KEYS.studiedSeconds, String(state.studiedSeconds));
       localStorage.setItem(KEYS.activity, JSON.stringify(state.activity.slice(0, 150)));
+      localStorage.setItem(KEYS.sensor, JSON.stringify({
+        score: state.sensor.score,
+        status: state.sensor.status,
+        log: state.sensor.log.slice(0, 50)
+      }));
     }
 
     function speak(text) {
@@ -385,6 +407,56 @@
       ui.totalTime.textContent = formatDuration(state.studiedSeconds);
     }
 
+    function sensorMessage(score) {
+      if (score >= 80) return "High focus detected. Keep this momentum going.";
+      if (score >= 60) return "Good pace. Complete one more topic for stronger progress.";
+      if (score >= 40) return "Medium focus. Start a timer session for better consistency.";
+      return "Low focus signal. Reduce distractions and restart a short focus sprint.";
+    }
+
+    function renderSensor() {
+      ui.focusScore.textContent = String(state.sensor.score);
+      ui.focusStatus.textContent = state.sensor.status;
+      ui.sensorCoach.textContent = state.sensor.message || "Sensor active.";
+      ui.sensorLog.innerHTML = "";
+      state.sensor.log.slice(0, 8).forEach((entry) => {
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `<small>${new Date(entry.time).toLocaleTimeString()}</small><span>${entry.text}</span>`;
+        ui.sensorLog.appendChild(row);
+      });
+      if (!state.sensor.log.length) {
+        ui.sensorLog.innerHTML = '<p class="danger">No sensor insights yet.</p>';
+      }
+    }
+
+    function runAutomationSensor() {
+      const studiedTopics = state.tasks.filter((t) => t.done).length;
+      const pendingTopics = state.tasks.length - studiedTopics;
+      const activityBoost = Math.min(20, Math.floor(state.activity.length / 5));
+      const timerBoost = Math.min(45, Math.floor(state.studiedSeconds / 120));
+      const taskBoost = Math.min(25, studiedTopics * 5);
+      const pendingPenalty = Math.min(20, pendingTopics * 2);
+      const idlePenalty = state.idleSeconds >= 120 ? 25 : Math.floor(state.idleSeconds / 10);
+
+      const score = Math.max(0, Math.min(100, 30 + timerBoost + taskBoost + activityBoost - pendingPenalty - idlePenalty));
+      state.sensor.score = score;
+      state.sensor.status = score >= 70 ? "Stable" : score >= 45 ? "Needs Attention" : "Critical";
+      state.sensor.message = sensorMessage(score);
+
+      state.sensor.log.unshift({
+        time: Date.now(),
+        text: `Score ${score}/100 | Idle ${state.idleSeconds}s | Studied ${studiedTopics} topic(s)`
+      });
+      state.sensor.log = state.sensor.log.slice(0, 30);
+
+      renderSensor();
+      saveAll();
+      if (score <= 35) {
+        speak("AI automation sensor warning. Focus is dropping. Start your study timer now.");
+      }
+    }
+
     function renderTimer() {
       ui.timerDisplay.textContent = formatDuration(state.sessionSeconds);
     }
@@ -396,6 +468,7 @@
       renderActivity();
       renderStats();
       renderTimer();
+      renderSensor();
     }
 
     ui.saveProfileBtn.addEventListener("click", () => {
@@ -506,6 +579,10 @@
         speak("You are idle for two minutes. Continue your study session.");
       }
     }, 1000);
+
+    setInterval(() => {
+      runAutomationSensor();
+    }, 30000);
 
     renderAll();
     speak(`Hello ${state.profile.name || defaultProfile.name}, welcome.`);
