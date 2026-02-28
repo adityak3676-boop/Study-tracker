@@ -26,7 +26,7 @@
       padding: 22px;
     }
 
-    .app { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+    .app { max-width: 1120px; margin: 0 auto; display: grid; gap: 14px; }
     .card {
       background: linear-gradient(145deg, var(--card), var(--card-soft));
       border: 1px solid rgba(255,255,255,0.14);
@@ -41,7 +41,7 @@
     .chips { display: flex; gap: 8px; flex-wrap: wrap; }
     .chip { padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); }
 
-    .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
 
     input, select, button {
       padding: 10px;
@@ -51,16 +51,42 @@
       color: var(--text);
     }
 
-    button { background: linear-gradient(120deg, var(--accent), #6f6cff); border: none; font-weight: 600; cursor: pointer; }
+    button {
+      background: linear-gradient(120deg, var(--accent), color-mix(in srgb, var(--accent), #6f6cff 30%));
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
     button.secondary { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); }
 
     .row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .list { display: grid; gap: 8px; margin-top: 10px; max-height: 250px; overflow: auto; }
-    .item { border: 1px solid rgba(255,255,255,0.12); padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.04); display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    .row > * { flex: 1 1 160px; }
 
-    .coach { border-left: 4px solid var(--good); background: rgba(73,211,167,0.12); padding: 10px; border-radius: 8px; min-height: 44px; display: flex; align-items: center; }
+    .list { display: grid; gap: 8px; margin-top: 10px; max-height: 260px; overflow: auto; }
+    .item {
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+    }
 
-    .timer { font-size: 36px; font-weight: 700; letter-spacing: 1px; margin: 8px 0; }
+    .coach {
+      border-left: 4px solid var(--good);
+      background: rgba(73,211,167,0.12);
+      padding: 10px;
+      border-radius: 8px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .timer { font-size: 38px; font-weight: 700; letter-spacing: 1px; margin: 8px 0; }
     small { color: var(--muted); }
     .danger { color: var(--warn); }
   </style>
@@ -70,22 +96,24 @@
     <section class="card hero">
       <div>
         <h1 id="title">Hello Adi 👋</h1>
-        <p id="subtitle">Welcome back. Your study tracker is ready and all data is auto-saved.</p>
+        <p id="subtitle">Welcome. Your study data is saved automatically.</p>
       </div>
       <div class="chips">
         <span class="chip">Materials: <strong id="materialsCount">0</strong></span>
-        <span class="chip">Studied: <strong id="studiedCount">0</strong></span>
+        <span class="chip">Studied Topics: <strong id="studiedCount">0</strong></span>
         <span class="chip">Not Studied: <strong id="pendingCount">0</strong></span>
-        <span class="chip">Timer Minutes: <strong id="minutesLogged">0</strong></span>
+        <span class="chip">Total Studied Time: <strong id="totalTime">00:00:00</strong></span>
       </div>
     </section>
 
     <section class="card">
-      <h2>Profile & Website Changes</h2>
-      <p>Change your name and site title anytime. Your changes stay saved.</p>
+      <h2>Edit Website & Profile</h2>
+      <p>Make a lot of changes anytime. Name, title, welcome text, and theme are all saved.</p>
       <div class="row">
-        <input id="nameInput" type="text" placeholder="Your name (e.g., Adi)" />
+        <input id="nameInput" type="text" placeholder="Your name (Adi)" />
         <input id="siteTitleInput" type="text" placeholder="Website title" />
+        <input id="welcomeInput" type="text" placeholder="Welcome text" />
+        <input id="accentInput" type="color" value="#7e8bff" title="Theme color" />
         <button id="saveProfileBtn">Save Changes</button>
       </div>
     </section>
@@ -93,7 +121,7 @@
     <section class="grid">
       <section class="card">
         <h2>Study Material Upload</h2>
-        <p>Upload files and save your study materials by subject.</p>
+        <p>Upload and save your study material by subject.</p>
         <div class="row">
           <select id="subject">
             <option>Math</option>
@@ -112,7 +140,7 @@
 
       <section class="card">
         <h2>Study Plan (Studied / Not Studied)</h2>
-        <p>Track what you completed and what is pending.</p>
+        <p>Track what you studied and what you have not studied yet.</p>
         <div class="row">
           <input id="taskInput" type="text" placeholder="Add topic/chapter" />
           <button id="addTaskBtn">Add Topic</button>
@@ -124,19 +152,19 @@
     <section class="grid">
       <section class="card">
         <h2>Study Timer</h2>
-        <p>Start timer while studying. Minutes are auto-added to your saved progress.</p>
-        <div class="timer" id="timerDisplay">00:00</div>
+        <p>Start timer while studying. Pause to save studied time into your total activity.</p>
+        <div class="timer" id="timerDisplay">00:00:00</div>
         <div class="row">
           <button id="startTimerBtn">Start</button>
-          <button id="pauseTimerBtn" class="secondary">Pause</button>
+          <button id="pauseTimerBtn" class="secondary">Pause & Save</button>
           <button id="resetTimerBtn" class="secondary">Reset</button>
         </div>
-        <small>Completed timer minutes are added to your total study activity.</small>
+        <small>Timer session and total activity are stored in browser local storage.</small>
       </section>
 
       <section class="card">
         <h2>Activity Log</h2>
-        <p>Everything important is saved: uploads, timer sessions, topic status changes.</p>
+        <p>Your important actions are saved (uploads, timer, topic status).</p>
         <div class="coach" id="coach">Automation coach ready.</div>
         <div class="list" id="activityList"></div>
       </section>
@@ -148,7 +176,7 @@
       profile: "st_profile",
       materials: "st_materials",
       tasks: "st_tasks",
-      minutes: "st_minutes",
+      studiedSeconds: "st_studied_seconds",
       activity: "st_activity"
     };
 
@@ -157,6 +185,8 @@
       subtitle: document.getElementById("subtitle"),
       nameInput: document.getElementById("nameInput"),
       siteTitleInput: document.getElementById("siteTitleInput"),
+      welcomeInput: document.getElementById("welcomeInput"),
+      accentInput: document.getElementById("accentInput"),
       saveProfileBtn: document.getElementById("saveProfileBtn"),
       subject: document.getElementById("subject"),
       materialInput: document.getElementById("materialInput"),
@@ -175,26 +205,40 @@
       materialsCount: document.getElementById("materialsCount"),
       studiedCount: document.getElementById("studiedCount"),
       pendingCount: document.getElementById("pendingCount"),
-      minutesLogged: document.getElementById("minutesLogged")
+      totalTime: document.getElementById("totalTime")
+    };
+
+    const defaultProfile = {
+      name: "Adi",
+      siteTitle: "Adi Study Tracker",
+      welcomeText: "Welcome",
+      accent: "#7e8bff"
     };
 
     const state = {
-      profile: JSON.parse(localStorage.getItem(KEYS.profile) || '{"name":"Adi","siteTitle":"Adi Study Tracker"}'),
+      profile: JSON.parse(localStorage.getItem(KEYS.profile) || JSON.stringify(defaultProfile)),
       materials: JSON.parse(localStorage.getItem(KEYS.materials) || "[]"),
       tasks: JSON.parse(localStorage.getItem(KEYS.tasks) || "[]"),
-      minutes: Number(localStorage.getItem(KEYS.minutes) || 0),
+      studiedSeconds: Number(localStorage.getItem(KEYS.studiedSeconds) || 0),
       activity: JSON.parse(localStorage.getItem(KEYS.activity) || "[]"),
-      timerSeconds: 0,
+      sessionSeconds: 0,
       timerRef: null,
       idleSeconds: 0
     };
+
+    function formatDuration(totalSeconds) {
+      const hh = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+      const mm = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+      const ss = String(totalSeconds % 60).padStart(2, "0");
+      return `${hh}:${mm}:${ss}`;
+    }
 
     function saveAll() {
       localStorage.setItem(KEYS.profile, JSON.stringify(state.profile));
       localStorage.setItem(KEYS.materials, JSON.stringify(state.materials));
       localStorage.setItem(KEYS.tasks, JSON.stringify(state.tasks));
-      localStorage.setItem(KEYS.minutes, String(state.minutes));
-      localStorage.setItem(KEYS.activity, JSON.stringify(state.activity.slice(0, 100)));
+      localStorage.setItem(KEYS.studiedSeconds, String(state.studiedSeconds));
+      localStorage.setItem(KEYS.activity, JSON.stringify(state.activity.slice(0, 150)));
     }
 
     function speak(text) {
@@ -224,12 +268,22 @@
       renderActivity();
     }
 
+    function applyTheme() {
+      const accent = state.profile.accent || defaultProfile.accent;
+      document.documentElement.style.setProperty("--accent", accent);
+      ui.accentInput.value = accent;
+    }
+
     function renderProfile() {
-      document.title = state.profile.siteTitle || "Adi Study Tracker";
-      ui.title.textContent = `Hello ${state.profile.name || "Adi"} 👋`;
-      ui.subtitle.textContent = `Welcome ${state.profile.name || "Adi"}. Your study data and activity are saved automatically.`;
-      ui.nameInput.value = state.profile.name || "Adi";
-      ui.siteTitleInput.value = state.profile.siteTitle || "Adi Study Tracker";
+      document.title = state.profile.siteTitle || defaultProfile.siteTitle;
+      const name = state.profile.name || defaultProfile.name;
+      const welcomeText = state.profile.welcomeText || defaultProfile.welcomeText;
+      ui.title.textContent = `Hello ${name} 👋`;
+      ui.subtitle.textContent = `${welcomeText} ${name}. Your study data and activity are saved automatically.`;
+      ui.nameInput.value = name;
+      ui.siteTitleInput.value = state.profile.siteTitle || defaultProfile.siteTitle;
+      ui.welcomeInput.value = welcomeText;
+      applyTheme();
     }
 
     function renderMaterials() {
@@ -248,7 +302,9 @@
         ui.materialsList.appendChild(row);
       });
 
-      if (!state.materials.length) ui.materialsList.innerHTML = '<p class="danger">No materials uploaded yet.</p>';
+      if (!state.materials.length) {
+        ui.materialsList.innerHTML = '<p class="danger">No materials uploaded yet.</p>';
+      }
 
       ui.materialsList.querySelectorAll("button[data-material-index]").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -263,29 +319,31 @@
 
     function renderTasks() {
       ui.tasksList.innerHTML = "";
-      state.tasks.slice().reverse().forEach((t, reverseIndex) => {
+      state.tasks.slice().reverse().forEach((task, reverseIndex) => {
         const idx = state.tasks.length - 1 - reverseIndex;
-        const statusLabel = t.done ? "Studied" : "Not Studied";
+        const status = task.done ? "Studied" : "Not Studied";
         const row = document.createElement("div");
         row.className = "item";
         row.innerHTML = `
           <div>
-            <strong>${t.topic}</strong><br>
-            <small>Status: ${statusLabel}</small>
+            <strong>${task.topic}</strong><br>
+            <small>Status: ${status}</small>
           </div>
           <div class="row">
-            <button class="secondary" data-toggle-index="${idx}">${t.done ? "Mark Not Studied" : "Mark Studied"}</button>
-            <button class="secondary" data-delete-task-index="${idx}">Delete</button>
+            <button class="secondary" data-toggle-task="${idx}">${task.done ? "Mark Not Studied" : "Mark Studied"}</button>
+            <button class="secondary" data-delete-task="${idx}">Delete</button>
           </div>
         `;
         ui.tasksList.appendChild(row);
       });
 
-      if (!state.tasks.length) ui.tasksList.innerHTML = '<p class="danger">No study topics added yet.</p>';
+      if (!state.tasks.length) {
+        ui.tasksList.innerHTML = '<p class="danger">No study topics added yet.</p>';
+      }
 
-      ui.tasksList.querySelectorAll("button[data-toggle-index]").forEach((btn) => {
+      ui.tasksList.querySelectorAll("button[data-toggle-task]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const idx = Number(btn.dataset.toggleIndex);
+          const idx = Number(btn.dataset.toggleTask);
           state.tasks[idx].done = !state.tasks[idx].done;
           addActivity(`${state.tasks[idx].topic} marked as ${state.tasks[idx].done ? "Studied" : "Not Studied"}`);
           saveAll();
@@ -293,9 +351,9 @@
         });
       });
 
-      ui.tasksList.querySelectorAll("button[data-delete-task-index]").forEach((btn) => {
+      ui.tasksList.querySelectorAll("button[data-delete-task]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const idx = Number(btn.dataset.deleteTaskIndex);
+          const idx = Number(btn.dataset.deleteTask);
           const removed = state.tasks.splice(idx, 1)[0];
           addActivity(`Deleted topic: ${removed.topic}`);
           saveAll();
@@ -312,7 +370,10 @@
         row.innerHTML = `<small>${new Date(a.time).toLocaleString()}</small><span>${a.text}</span>`;
         ui.activityList.appendChild(row);
       });
-      if (!state.activity.length) ui.activityList.innerHTML = '<p class="danger">No activity yet.</p>';
+
+      if (!state.activity.length) {
+        ui.activityList.innerHTML = '<p class="danger">No activity yet.</p>';
+      }
     }
 
     function renderStats() {
@@ -321,31 +382,31 @@
       ui.materialsCount.textContent = String(state.materials.length);
       ui.studiedCount.textContent = String(studied);
       ui.pendingCount.textContent = String(pending);
-      ui.minutesLogged.textContent = String(state.minutes);
+      ui.totalTime.textContent = formatDuration(state.studiedSeconds);
     }
 
     function renderTimer() {
-      const min = String(Math.floor(state.timerSeconds / 60)).padStart(2, "0");
-      const sec = String(state.timerSeconds % 60).padStart(2, "0");
-      ui.timerDisplay.textContent = `${min}:${sec}`;
+      ui.timerDisplay.textContent = formatDuration(state.sessionSeconds);
     }
 
     function renderAll() {
       renderProfile();
       renderMaterials();
       renderTasks();
-      renderStats();
       renderActivity();
+      renderStats();
       renderTimer();
     }
 
     ui.saveProfileBtn.addEventListener("click", () => {
-      state.profile.name = ui.nameInput.value.trim() || "Adi";
-      state.profile.siteTitle = ui.siteTitleInput.value.trim() || "Adi Study Tracker";
-      addActivity(`Profile updated for ${state.profile.name}`);
+      state.profile.name = ui.nameInput.value.trim() || defaultProfile.name;
+      state.profile.siteTitle = ui.siteTitleInput.value.trim() || defaultProfile.siteTitle;
+      state.profile.welcomeText = ui.welcomeInput.value.trim() || defaultProfile.welcomeText;
+      state.profile.accent = ui.accentInput.value || defaultProfile.accent;
       saveAll();
       renderProfile();
-      speak(`Saved. Hello ${state.profile.name}, welcome.`);
+      addActivity(`Profile updated for ${state.profile.name}`);
+      speak(`Hello ${state.profile.name}, welcome.`);
     });
 
     ui.uploadBtn.addEventListener("click", () => {
@@ -353,8 +414,9 @@
         speak("Please select files first.");
         return;
       }
-      const subject = ui.subject.value;
+
       const now = Date.now();
+      const subject = ui.subject.value;
       [...ui.materialInput.files].forEach((file) => {
         state.materials.push({
           name: file.name,
@@ -363,12 +425,13 @@
           createdAt: now
         });
       });
-      addActivity(`Uploaded ${ui.materialInput.files.length} material file(s) in ${subject}`);
+
+      addActivity(`Uploaded ${ui.materialInput.files.length} file(s) in ${subject}`);
+      ui.materialInput.value = "";
       saveAll();
       renderAll();
-      ui.materialInput.value = "";
       beep();
-      speak("Material uploaded and saved.");
+      speak("Study material uploaded and saved.");
     });
 
     ui.clearMaterialsBtn.addEventListener("click", () => {
@@ -376,7 +439,7 @@
       addActivity("Cleared all study materials");
       saveAll();
       renderAll();
-      speak("All materials cleared.");
+      speak("All materials removed.");
     });
 
     ui.addTaskBtn.addEventListener("click", () => {
@@ -385,6 +448,7 @@
         speak("Please write a topic first.");
         return;
       }
+
       state.tasks.push({ topic, done: false });
       ui.taskInput.value = "";
       addActivity(`Added topic: ${topic}`);
@@ -395,28 +459,30 @@
     ui.startTimerBtn.addEventListener("click", () => {
       if (state.timerRef) return;
       state.timerRef = setInterval(() => {
-        state.timerSeconds += 1;
+        state.sessionSeconds += 1;
         renderTimer();
       }, 1000);
       addActivity("Study timer started");
-      speak("Timer started. Focus mode on.");
+      speak("Timer started. Focus on your study.");
     });
 
     ui.pauseTimerBtn.addEventListener("click", () => {
       if (!state.timerRef) return;
+
       clearInterval(state.timerRef);
       state.timerRef = null;
-      const completedMins = Math.floor(state.timerSeconds / 60);
-      if (completedMins > 0) {
-        state.minutes += completedMins;
-        addActivity(`Timer paused. Logged ${completedMins} minute(s) study activity.`);
+      if (state.sessionSeconds > 0) {
+        state.studiedSeconds += state.sessionSeconds;
+        addActivity(`Timer paused and saved ${formatDuration(state.sessionSeconds)} study time.`);
       } else {
         addActivity("Timer paused.");
       }
-      state.timerSeconds = state.timerSeconds % 60;
+
+      state.sessionSeconds = 0;
       saveAll();
       renderAll();
-      speak("Timer paused and activity saved.");
+      beep(700, 0.1);
+      speak("Timer paused. Study activity saved.");
     });
 
     ui.resetTimerBtn.addEventListener("click", () => {
@@ -424,7 +490,7 @@
         clearInterval(state.timerRef);
         state.timerRef = null;
       }
-      state.timerSeconds = 0;
+      state.sessionSeconds = 0;
       renderTimer();
       addActivity("Timer reset");
       speak("Timer reset.");
@@ -442,8 +508,8 @@
     }, 1000);
 
     renderAll();
-    speak(`Hello ${state.profile.name || "Adi"}, welcome.`);
-    addActivity(`Visited the tracker: welcome ${state.profile.name || "Adi"}`);
+    speak(`Hello ${state.profile.name || defaultProfile.name}, welcome.`);
+    addActivity(`Opened tracker: Hello ${state.profile.name || defaultProfile.name}`);
     saveAll();
   </script>
 </body>
