@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adi Study Tracker</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #141b34;
+      --card-soft: #1a2448;
+      --text: #eaf0ff;
+      --muted: #b7c3ef;
+      --accent: #7e8bff;
+      --good: #49d3a7;
+      --warn: #ff8e8e;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #23306a, var(--bg));
+      color: var(--text);
+      font-family: Inter, Arial, sans-serif;
+      min-height: 100vh;
+      padding: 22px;
+    }
+
+    .app { max-width: 1120px; margin: 0 auto; display: grid; gap: 14px; }
+    .card {
+      background: linear-gradient(145deg, var(--card), var(--card-soft));
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    h1, h2, h3 { margin: 0 0 8px; }
+    p { margin: 0 0 8px; color: var(--muted); }
+
+    .hero { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip { padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); }
+
+    .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+
+    input, select, button {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.24);
+      color: var(--text);
+    }
+
+    button {
+      background: linear-gradient(120deg, var(--accent), color-mix(in srgb, var(--accent), #6f6cff 30%));
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.secondary { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); }
+
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .row > * { flex: 1 1 160px; }
+
+    .list { display: grid; gap: 8px; margin-top: 10px; max-height: 260px; overflow: auto; }
+    .item {
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .coach {
+      border-left: 4px solid var(--good);
+      background: rgba(73,211,167,0.12);
+      padding: 10px;
+      border-radius: 8px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .timer { font-size: 38px; font-weight: 700; letter-spacing: 1px; margin: 8px 0; }
+    small { color: var(--muted); }
+    .danger { color: var(--warn); }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card hero">
+      <div>
+        <h1 id="title">Hello Adi 👋</h1>
+        <p id="subtitle">Welcome. Your study data is saved automatically.</p>
+      </div>
+      <div class="chips">
+        <span class="chip">Materials: <strong id="materialsCount">0</strong></span>
+        <span class="chip">Studied Topics: <strong id="studiedCount">0</strong></span>
+        <span class="chip">Not Studied: <strong id="pendingCount">0</strong></span>
+        <span class="chip">Total Studied Time: <strong id="totalTime">00:00:00</strong></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Edit Website & Profile</h2>
+      <p>Make a lot of changes anytime. Name, title, welcome text, and theme are all saved.</p>
+      <div class="row">
+        <input id="nameInput" type="text" placeholder="Your name (Adi)" />
+        <input id="siteTitleInput" type="text" placeholder="Website title" />
+        <input id="welcomeInput" type="text" placeholder="Welcome text" />
+        <input id="accentInput" type="color" value="#7e8bff" title="Theme color" />
+        <button id="saveProfileBtn">Save Changes</button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <section class="card">
+        <h2>Study Material Upload</h2>
+        <p>Upload and save your study material by subject.</p>
+        <div class="row">
+          <select id="subject">
+            <option>Math</option>
+            <option>Science</option>
+            <option>History</option>
+            <option>Language</option>
+            <option>Computer</option>
+            <option>General</option>
+          </select>
+          <input id="materialInput" type="file" multiple />
+          <button id="uploadBtn">Upload</button>
+          <button id="clearMaterialsBtn" class="secondary">Clear Materials</button>
+        </div>
+        <div class="list" id="materialsList"></div>
+      </section>
+
+      <section class="card">
+        <h2>Study Plan (Studied / Not Studied)</h2>
+        <p>Track what you studied and what you have not studied yet.</p>
+        <div class="row">
+          <input id="taskInput" type="text" placeholder="Add topic/chapter" />
+          <button id="addTaskBtn">Add Topic</button>
+        </div>
+        <div class="list" id="tasksList"></div>
+      </section>
+    </section>
+
+    <section class="grid">
+      <section class="card">
+        <h2>Study Timer</h2>
+        <p>Start timer while studying. Pause to save studied time into your total activity.</p>
+        <div class="timer" id="timerDisplay">00:00:00</div>
+        <div class="row">
+          <button id="startTimerBtn">Start</button>
+          <button id="pauseTimerBtn" class="secondary">Pause & Save</button>
+          <button id="resetTimerBtn" class="secondary">Reset</button>
+        </div>
+        <small>Timer session and total activity are stored in browser local storage.</small>
+      </section>
+
+      <section class="card">
+        <h2>Activity Log</h2>
+        <p>Your important actions are saved (uploads, timer, topic status).</p>
+        <div class="coach" id="coach">Automation coach ready.</div>
+        <div class="list" id="activityList"></div>
+      </section>
+
+      <section class="card">
+        <h2>AI Automation Sensor</h2>
+        <p>Smart sensor checks your study behavior and auto-suggests what to do next.</p>
+        <div class="chips">
+          <span class="chip">Focus Score: <strong id="focusScore">0</strong>/100</span>
+          <span class="chip">Status: <strong id="focusStatus">Booting</strong></span>
+        </div>
+        <div class="coach" id="sensorCoach">Sensor starting...</div>
+        <div class="list" id="sensorLog"></div>
+      </section>
+
+      <section class="card">
+        <h2>Voice Command Music Automation</h2>
+        <p>Say <strong>good morning</strong> or <strong>good evening</strong> to auto-play motivation tracks.</p>
+        <audio id="musicPlayer" loop controls></audio>
+        <h3 id="status">🎙 Listening for command...</h3>
+        <div class="row">
+          <button id="startListeningBtn">Start Listening</button>
+          <button id="stopListeningBtn" class="secondary">Stop Listening</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const KEYS = {
+      profile: "st_profile",
+      materials: "st_materials",
+      tasks: "st_tasks",
+      studiedSeconds: "st_studied_seconds",
+      activity: "st_activity",
+      sensor: "st_sensor"
+    };
+
+    const ui = {
+      title: document.getElementById("title"),
+      subtitle: document.getElementById("subtitle"),
+      nameInput: document.getElementById("nameInput"),
+      siteTitleInput: document.getElementById("siteTitleInput"),
+      welcomeInput: document.getElementById("welcomeInput"),
+      accentInput: document.getElementById("accentInput"),
+      saveProfileBtn: document.getElementById("saveProfileBtn"),
+      subject: document.getElementById("subject"),
+      materialInput: document.getElementById("materialInput"),
+      uploadBtn: document.getElementById("uploadBtn"),
+      clearMaterialsBtn: document.getElementById("clearMaterialsBtn"),
+      materialsList: document.getElementById("materialsList"),
+      taskInput: document.getElementById("taskInput"),
+      addTaskBtn: document.getElementById("addTaskBtn"),
+      tasksList: document.getElementById("tasksList"),
+      timerDisplay: document.getElementById("timerDisplay"),
+      startTimerBtn: document.getElementById("startTimerBtn"),
+      pauseTimerBtn: document.getElementById("pauseTimerBtn"),
+      resetTimerBtn: document.getElementById("resetTimerBtn"),
+      coach: document.getElementById("coach"),
+      activityList: document.getElementById("activityList"),
+      focusScore: document.getElementById("focusScore"),
+      focusStatus: document.getElementById("focusStatus"),
+      sensorCoach: document.getElementById("sensorCoach"),
+      sensorLog: document.getElementById("sensorLog"),
+      musicPlayer: document.getElementById("musicPlayer"),
+      voiceStatus: document.getElementById("status"),
+      startListeningBtn: document.getElementById("startListeningBtn"),
+      stopListeningBtn: document.getElementById("stopListeningBtn"),
+      materialsCount: document.getElementById("materialsCount"),
+      studiedCount: document.getElementById("studiedCount"),
+      pendingCount: document.getElementById("pendingCount"),
+      totalTime: document.getElementById("totalTime")
+    };
+
+    const defaultProfile = {
+      name: "Adi",
+      siteTitle: "Adi Study Tracker",
+      welcomeText: "Welcome",
+      accent: "#7e8bff"
+    };
+
+    const state = {
+      profile: JSON.parse(localStorage.getItem(KEYS.profile) || JSON.stringify(defaultProfile)),
+      materials: JSON.parse(localStorage.getItem(KEYS.materials) || "[]"),
+      tasks: JSON.parse(localStorage.getItem(KEYS.tasks) || "[]"),
+      studiedSeconds: Number(localStorage.getItem(KEYS.studiedSeconds) || 0),
+      activity: JSON.parse(localStorage.getItem(KEYS.activity) || "[]"),
+      sensor: JSON.parse(localStorage.getItem(KEYS.sensor) || '{"score":0,"status":"Booting","log":[]}'),
+      sessionSeconds: 0,
+      timerRef: null,
+      idleSeconds: 0
+    };
+
+    function formatDuration(totalSeconds) {
+      const hh = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+      const mm = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+      const ss = String(totalSeconds % 60).padStart(2, "0");
+      return `${hh}:${mm}:${ss}`;
+    }
+
+    function saveAll() {
+      localStorage.setItem(KEYS.profile, JSON.stringify(state.profile));
+      localStorage.setItem(KEYS.materials, JSON.stringify(state.materials));
+      localStorage.setItem(KEYS.tasks, JSON.stringify(state.tasks));
+      localStorage.setItem(KEYS.studiedSeconds, String(state.studiedSeconds));
+      localStorage.setItem(KEYS.activity, JSON.stringify(state.activity.slice(0, 150)));
+      localStorage.setItem(KEYS.sensor, JSON.stringify({
+        score: state.sensor.score,
+        status: state.sensor.status,
+        log: state.sensor.log.slice(0, 50)
+      }));
+    }
+
+    function speak(text) {
+      ui.coach.textContent = text;
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.95;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    }
+
+    function beep(freq = 860, duration = 0.14) {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "triangle";
+      osc.frequency.value = freq;
+      gain.gain.value = 0.03;
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    }
+
+    function addActivity(text) {
+      state.activity.unshift({ text, time: Date.now() });
+      saveAll();
+      renderActivity();
+    }
+
+    function applyTheme() {
+      const accent = state.profile.accent || defaultProfile.accent;
+      document.documentElement.style.setProperty("--accent", accent);
+      ui.accentInput.value = accent;
+    }
+
+    function renderProfile() {
+      document.title = state.profile.siteTitle || defaultProfile.siteTitle;
+      const name = state.profile.name || defaultProfile.name;
+      const welcomeText = state.profile.welcomeText || defaultProfile.welcomeText;
+      ui.title.textContent = `Hello ${name} 👋`;
+      ui.subtitle.textContent = `${welcomeText} ${name}. Your study data and activity are saved automatically.`;
+      ui.nameInput.value = name;
+      ui.siteTitleInput.value = state.profile.siteTitle || defaultProfile.siteTitle;
+      ui.welcomeInput.value = welcomeText;
+      applyTheme();
+    }
+
+    function renderMaterials() {
+      ui.materialsList.innerHTML = "";
+      state.materials.slice().reverse().forEach((m, reverseIndex) => {
+        const idx = state.materials.length - 1 - reverseIndex;
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `
+          <div>
+            <strong>${m.name}</strong><br>
+            <small>${m.subject} • ${m.sizeKB} KB • ${new Date(m.createdAt).toLocaleString()}</small>
+          </div>
+          <button class="secondary" data-material-index="${idx}">Delete</button>
+        `;
+        ui.materialsList.appendChild(row);
+      });
+
+      if (!state.materials.length) {
+        ui.materialsList.innerHTML = '<p class="danger">No materials uploaded yet.</p>';
+      }
+
+      ui.materialsList.querySelectorAll("button[data-material-index]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.materialIndex);
+          const removed = state.materials.splice(idx, 1)[0];
+          addActivity(`Deleted material: ${removed.name}`);
+          saveAll();
+          renderAll();
+        });
+      });
+    }
+
+    function renderTasks() {
+      ui.tasksList.innerHTML = "";
+      state.tasks.slice().reverse().forEach((task, reverseIndex) => {
+        const idx = state.tasks.length - 1 - reverseIndex;
+        const status = task.done ? "Studied" : "Not Studied";
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `
+          <div>
+            <strong>${task.topic}</strong><br>
+            <small>Status: ${status}</small>
+          </div>
+          <div class="row">
+            <button class="secondary" data-toggle-task="${idx}">${task.done ? "Mark Not Studied" : "Mark Studied"}</button>
+            <button class="secondary" data-delete-task="${idx}">Delete</button>
+          </div>
+        `;
+        ui.tasksList.appendChild(row);
+      });
+
+      if (!state.tasks.length) {
+        ui.tasksList.innerHTML = '<p class="danger">No study topics added yet.</p>';
+      }
+
+      ui.tasksList.querySelectorAll("button[data-toggle-task]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.toggleTask);
+          state.tasks[idx].done = !state.tasks[idx].done;
+          addActivity(`${state.tasks[idx].topic} marked as ${state.tasks[idx].done ? "Studied" : "Not Studied"}`);
+          saveAll();
+          renderAll();
+        });
+      });
+
+      ui.tasksList.querySelectorAll("button[data-delete-task]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.deleteTask);
+          const removed = state.tasks.splice(idx, 1)[0];
+          addActivity(`Deleted topic: ${removed.topic}`);
+          saveAll();
+          renderAll();
+        });
+      });
+    }
+
+    function renderActivity() {
+      ui.activityList.innerHTML = "";
+      state.activity.slice(0, 30).forEach((a) => {
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `<small>${new Date(a.time).toLocaleString()}</small><span>${a.text}</span>`;
+        ui.activityList.appendChild(row);
+      });
+
+      if (!state.activity.length) {
+        ui.activityList.innerHTML = '<p class="danger">No activity yet.</p>';
+      }
+    }
+
+    function renderStats() {
+      const studied = state.tasks.filter((t) => t.done).length;
+      const pending = state.tasks.length - studied;
+      ui.materialsCount.textContent = String(state.materials.length);
+      ui.studiedCount.textContent = String(studied);
+      ui.pendingCount.textContent = String(pending);
+      ui.totalTime.textContent = formatDuration(state.studiedSeconds);
+    }
+
+    function sensorMessage(score) {
+      if (score >= 80) return "High focus detected. Keep this momentum going.";
+      if (score >= 60) return "Good pace. Complete one more topic for stronger progress.";
+      if (score >= 40) return "Medium focus. Start a timer session for better consistency.";
+      return "Low focus signal. Reduce distractions and restart a short focus sprint.";
+    }
+
+    function renderSensor() {
+      ui.focusScore.textContent = String(state.sensor.score);
+      ui.focusStatus.textContent = state.sensor.status;
+      ui.sensorCoach.textContent = state.sensor.message || "Sensor active.";
+      ui.sensorLog.innerHTML = "";
+      state.sensor.log.slice(0, 8).forEach((entry) => {
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `<small>${new Date(entry.time).toLocaleTimeString()}</small><span>${entry.text}</span>`;
+        ui.sensorLog.appendChild(row);
+      });
+      if (!state.sensor.log.length) {
+        ui.sensorLog.innerHTML = '<p class="danger">No sensor insights yet.</p>';
+      }
+    }
+
+    function runAutomationSensor() {
+      const studiedTopics = state.tasks.filter((t) => t.done).length;
+      const pendingTopics = state.tasks.length - studiedTopics;
+      const activityBoost = Math.min(20, Math.floor(state.activity.length / 5));
+      const timerBoost = Math.min(45, Math.floor(state.studiedSeconds / 120));
+      const taskBoost = Math.min(25, studiedTopics * 5);
+      const pendingPenalty = Math.min(20, pendingTopics * 2);
+      const idlePenalty = state.idleSeconds >= 120 ? 25 : Math.floor(state.idleSeconds / 10);
+
+      const score = Math.max(0, Math.min(100, 30 + timerBoost + taskBoost + activityBoost - pendingPenalty - idlePenalty));
+      state.sensor.score = score;
+      state.sensor.status = score >= 70 ? "Stable" : score >= 45 ? "Needs Attention" : "Critical";
+      state.sensor.message = sensorMessage(score);
+
+      state.sensor.log.unshift({
+        time: Date.now(),
+        text: `Score ${score}/100 | Idle ${state.idleSeconds}s | Studied ${studiedTopics} topic(s)`
+      });
+      state.sensor.log = state.sensor.log.slice(0, 30);
+
+      renderSensor();
+      saveAll();
+      if (score <= 35) {
+        speak("AI automation sensor warning. Focus is dropping. Start your study timer now.");
+      }
+    }
+
+    function renderTimer() {
+      ui.timerDisplay.textContent = formatDuration(state.sessionSeconds);
+    }
+
+    function renderAll() {
+      renderProfile();
+      renderMaterials();
+      renderTasks();
+      renderActivity();
+      renderStats();
+      renderTimer();
+      renderSensor();
+    }
+
+    ui.saveProfileBtn.addEventListener("click", () => {
+      state.profile.name = ui.nameInput.value.trim() || defaultProfile.name;
+      state.profile.siteTitle = ui.siteTitleInput.value.trim() || defaultProfile.siteTitle;
+      state.profile.welcomeText = ui.welcomeInput.value.trim() || defaultProfile.welcomeText;
+      state.profile.accent = ui.accentInput.value || defaultProfile.accent;
+      saveAll();
+      renderProfile();
+      addActivity(`Profile updated for ${state.profile.name}`);
+      speak(`Hello ${state.profile.name}, welcome.`);
+    });
+
+    ui.uploadBtn.addEventListener("click", () => {
+      if (!ui.materialInput.files.length) {
+        speak("Please select files first.");
+        return;
+      }
+
+      const now = Date.now();
+      const subject = ui.subject.value;
+      [...ui.materialInput.files].forEach((file) => {
+        state.materials.push({
+          name: file.name,
+          subject,
+          sizeKB: Math.max(1, Math.round(file.size / 1024)),
+          createdAt: now
+        });
+      });
+
+      addActivity(`Uploaded ${ui.materialInput.files.length} file(s) in ${subject}`);
+      ui.materialInput.value = "";
+      saveAll();
+      renderAll();
+      beep();
+      speak("Study material uploaded and saved.");
+    });
+
+    ui.clearMaterialsBtn.addEventListener("click", () => {
+      state.materials = [];
+      addActivity("Cleared all study materials");
+      saveAll();
+      renderAll();
+      speak("All materials removed.");
+    });
+
+    ui.addTaskBtn.addEventListener("click", () => {
+      const topic = ui.taskInput.value.trim();
+      if (!topic) {
+        speak("Please write a topic first.");
+        return;
+      }
+
+      state.tasks.push({ topic, done: false });
+      ui.taskInput.value = "";
+      addActivity(`Added topic: ${topic}`);
+      saveAll();
+      renderAll();
+    });
+
+    ui.startTimerBtn.addEventListener("click", () => {
+      if (state.timerRef) return;
+      state.timerRef = setInterval(() => {
+        state.sessionSeconds += 1;
+        renderTimer();
+      }, 1000);
+      addActivity("Study timer started");
+      speak("Timer started. Focus on your study.");
+    });
+
+    ui.pauseTimerBtn.addEventListener("click", () => {
+      if (!state.timerRef) return;
+
+      clearInterval(state.timerRef);
+      state.timerRef = null;
+      if (state.sessionSeconds > 0) {
+        state.studiedSeconds += state.sessionSeconds;
+        addActivity(`Timer paused and saved ${formatDuration(state.sessionSeconds)} study time.`);
+      } else {
+        addActivity("Timer paused.");
+      }
+
+      state.sessionSeconds = 0;
+      saveAll();
+      renderAll();
+      beep(700, 0.1);
+      speak("Timer paused. Study activity saved.");
+    });
+
+    ui.resetTimerBtn.addEventListener("click", () => {
+      if (state.timerRef) {
+        clearInterval(state.timerRef);
+        state.timerRef = null;
+      }
+      state.sessionSeconds = 0;
+      renderTimer();
+      addActivity("Timer reset");
+      speak("Timer reset.");
+    });
+
+    ["click", "keydown", "mousemove", "touchstart"].forEach((eventName) => {
+      document.addEventListener(eventName, () => { state.idleSeconds = 0; });
+    });
+
+    setInterval(() => {
+      state.idleSeconds += 1;
+      if (state.idleSeconds === 120) {
+        speak("You are idle for two minutes. Continue your study session.");
+      }
+    }, 1000);
+
+    setInterval(() => {
+      runAutomationSensor();
+    }, 30000);
+
+    const player = ui.musicPlayer;
+    const status = ui.voiceStatus;
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    const musicMap = {
+      morning: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+      evening: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+    };
+
+    function updateVoiceStatus(text) {
+      status.innerText = text;
+    }
+
+    if (SpeechRecognitionAPI) {
+      recognition = new SpeechRecognitionAPI();
+      recognition.continuous = true;
+      recognition.lang = "en-IN";
+
+      recognition.onresult = function(event) {
+        const command = event.results[event.results.length - 1][0].transcript.toLowerCase();
+        status.innerText = "Command Heard: " + command;
+
+        if (command.includes("good morning")) {
+          player.src = musicMap.morning;
+          player.volume = 0.6;
+          player.play().catch(() => updateVoiceStatus("Tap play once to enable audio."));
+          updateVoiceStatus("🌅 Morning Motivation Activated");
+          addActivity("Voice command: good morning");
+        }
+
+        if (command.includes("good evening")) {
+          player.src = musicMap.evening;
+          player.volume = 0.4;
+          player.play().catch(() => updateVoiceStatus("Tap play once to enable audio."));
+          updateVoiceStatus("🌙 Night Warrior Mode Activated");
+          addActivity("Voice command: good evening");
+        }
+      };
+
+      recognition.onerror = function() {
+        updateVoiceStatus("Voice recognition error. Check microphone permission.");
+      };
+
+      recognition.onend = function() {
+        if (state.voiceActive) recognition.start();
+      };
+    } else {
+      status.innerText = "Speech recognition not supported in this browser.";
+    }
+
+    state.voiceActive = false;
+
+    ui.startListeningBtn.addEventListener("click", () => {
+      if (!recognition) {
+        status.innerText = "Speech recognition not available.";
+        return;
+      }
+      state.voiceActive = true;
+      recognition.start();
+      updateVoiceStatus("🎙 Listening for command...");
+      addActivity("Voice listening started");
+    });
+
+    ui.stopListeningBtn.addEventListener("click", () => {
+      state.voiceActive = false;
+      if (recognition) recognition.stop();
+      updateVoiceStatus("🛑 Voice listening stopped.");
+      addActivity("Voice listening stopped");
+    });
+
+    renderAll();
+    speak(`Hello ${state.profile.name || defaultProfile.name}, welcome.`);
+    addActivity(`Opened tracker: Hello ${state.profile.name || defaultProfile.name}`);
+    saveAll();
+  </script>
+</body>
+</html>
