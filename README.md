@@ -10,6 +10,7 @@ A customizable one-page study tracker website with automation and local data sav
 - Saved activity history (uploads, topic changes, timer actions, profile edits).
 - Study timer (start, pause & save, reset) with total studied time tracking.
 - AI automation sensor that computes focus score, status, and smart study suggestions.
+- Voice command automation sensor: say "good morning" or "good evening" to auto-play music mode.
 - Full localStorage persistence for profile, materials, tasks, activity, and studied time.
 
 ## Run locally

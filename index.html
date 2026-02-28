@@ -179,6 +179,17 @@
         <div class="coach" id="sensorCoach">Sensor starting...</div>
         <div class="list" id="sensorLog"></div>
       </section>
+
+      <section class="card">
+        <h2>Voice Command Music Automation</h2>
+        <p>Say <strong>good morning</strong> or <strong>good evening</strong> to auto-play motivation tracks.</p>
+        <audio id="musicPlayer" loop controls></audio>
+        <h3 id="status">🎙 Listening for command...</h3>
+        <div class="row">
+          <button id="startListeningBtn">Start Listening</button>
+          <button id="stopListeningBtn" class="secondary">Stop Listening</button>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -218,6 +229,10 @@
       focusStatus: document.getElementById("focusStatus"),
       sensorCoach: document.getElementById("sensorCoach"),
       sensorLog: document.getElementById("sensorLog"),
+      musicPlayer: document.getElementById("musicPlayer"),
+      voiceStatus: document.getElementById("status"),
+      startListeningBtn: document.getElementById("startListeningBtn"),
+      stopListeningBtn: document.getElementById("stopListeningBtn"),
       materialsCount: document.getElementById("materialsCount"),
       studiedCount: document.getElementById("studiedCount"),
       pendingCount: document.getElementById("pendingCount"),
@@ -583,6 +598,77 @@
     setInterval(() => {
       runAutomationSensor();
     }, 30000);
+
+    const player = ui.musicPlayer;
+    const status = ui.voiceStatus;
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    const musicMap = {
+      morning: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+      evening: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+    };
+
+    function updateVoiceStatus(text) {
+      status.innerText = text;
+    }
+
+    if (SpeechRecognitionAPI) {
+      recognition = new SpeechRecognitionAPI();
+      recognition.continuous = true;
+      recognition.lang = "en-IN";
+
+      recognition.onresult = function(event) {
+        const command = event.results[event.results.length - 1][0].transcript.toLowerCase();
+        status.innerText = "Command Heard: " + command;
+
+        if (command.includes("good morning")) {
+          player.src = musicMap.morning;
+          player.volume = 0.6;
+          player.play().catch(() => updateVoiceStatus("Tap play once to enable audio."));
+          updateVoiceStatus("🌅 Morning Motivation Activated");
+          addActivity("Voice command: good morning");
+        }
+
+        if (command.includes("good evening")) {
+          player.src = musicMap.evening;
+          player.volume = 0.4;
+          player.play().catch(() => updateVoiceStatus("Tap play once to enable audio."));
+          updateVoiceStatus("🌙 Night Warrior Mode Activated");
+          addActivity("Voice command: good evening");
+        }
+      };
+
+      recognition.onerror = function() {
+        updateVoiceStatus("Voice recognition error. Check microphone permission.");
+      };
+
+      recognition.onend = function() {
+        if (state.voiceActive) recognition.start();
+      };
+    } else {
+      status.innerText = "Speech recognition not supported in this browser.";
+    }
+
+    state.voiceActive = false;
+
+    ui.startListeningBtn.addEventListener("click", () => {
+      if (!recognition) {
+        status.innerText = "Speech recognition not available.";
+        return;
+      }
+      state.voiceActive = true;
+      recognition.start();
+      updateVoiceStatus("🎙 Listening for command...");
+      addActivity("Voice listening started");
+    });
+
+    ui.stopListeningBtn.addEventListener("click", () => {
+      state.voiceActive = false;
+      if (recognition) recognition.stop();
+      updateVoiceStatus("🛑 Voice listening stopped.");
+      addActivity("Voice listening stopped");
+    });
 
     renderAll();
     speak(`Hello ${state.profile.name || defaultProfile.name}, welcome.`);
