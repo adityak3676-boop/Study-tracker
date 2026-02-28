@@ -1,20 +1,18 @@
-# Study Tracker
+# Adi Study Tracker
 
-A lightweight front-end web app for tracking study activity with built-in automation.
+A customizable single-page study tracker with automation and local data persistence.
 
-## Features
-- Study material upload section with subject tagging.
-- Automatic metadata save to browser local storage.
-- Voice feedback (speech synthesis) for key actions and reminders.
-- Upload sound automation.
-- Idle reminder automation after 2 minutes.
-- XP and streak tracking.
+## What it includes
+- Voice greeting on entry: **"Hello Adi, welcome"** (name editable).
+- Editable profile/site title so you can make changes to the website behavior and identity.
+- Study Material upload section with subject tagging.
+- Study plan topics with **Studied / Not Studied** status tracking.
+- Activity log to record uploads, timer actions, and progress updates.
+- Study timer (start/pause/reset) that logs completed minutes into saved activity.
+- Browser localStorage persistence for profile, materials, tasks, activity, and minutes.
 
-## Run locally
-Because this project is static HTML/CSS/JS, you can open `index.html` directly or run a simple server:
-
+## Run
 ```bash
 python3 -m http.server 4173
 ```
-
-Then open `http://localhost:4173`.
+Open: `http://localhost:4173`
